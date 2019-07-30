@@ -3,9 +3,10 @@ import java.net.*;
 
 public class S {
 
+    static int serverPort = 10322; // default port
 
     public static void main(String[] args) {
-        int serverPort = 10322; // default port
+
         if( args.length == 1 ) serverPort = Integer.parseInt(args[0]);
         try {
             // instantiates a stream socket for accepting
@@ -19,7 +20,6 @@ public class S {
                 System.out.println("Enter path to your file.");
                 String fileName = br.readLine();
                 file = new File(fileName);
-                System.out.println(file.getName());
             } catch(IOException e) {
                 System.out.println(e);
             }
@@ -29,19 +29,21 @@ public class S {
                 MyStreamSocket myDataSocket = new MyStreamSocket(myConnectionSocket.accept());
                 System.out.println("connection accepted");
                 boolean done = false;
+                boolean messageSent = false;
                 while( !done ) {
                     BufferedReader reader = new BufferedReader(new FileReader(file));
                     message = myDataSocket.receiveMessage();
-                    /**/System.out.println("message received: " + message);
+                    System.out.println("message received: " + message);
                     int n = 1;
                     if(message.equalsIgnoreCase("quit")) {
                        myDataSocket.sendMessage("Client disconnected.");
+                       messageSent = true;
                        myDataSocket.close();
                        myDataSocket = new MyStreamSocket(myConnectionSocket.accept());
-                  } else
-                        if(message.equalsIgnoreCase("stop")) {
+                  } else if(message.equalsIgnoreCase("stop")) {
                         //shutdown server
                         myDataSocket.sendMessage("Server shutting down...");
+                        messageSent = true;
                         myDataSocket.close();
                         myConnectionSocket.close();
                         return;
@@ -51,67 +53,36 @@ public class S {
                             i = Integer.parseInt(message);
                         } catch(Exception e) {
                             myDataSocket.sendMessage("ERR");
+                            messageSent = true;
                         }
-                        System.out.println("i = " + i);
                         if ( i > 0) {
                             String line;
                             while (reader.readLine() != null) {
-                                line = reader.readLine();
-                                if (n == i) {
-                                    myDataSocket.sendMessage(line);
-                                    break;
+                                if (n+1 == i) {
+                                    line = reader.readLine();
+                                    if(line == null) {
+                                        myDataSocket.sendMessage("ERR");
+                                    } else {
+                                        myDataSocket.sendMessage(line);
+                                        messageSent = true;
+                                        break;
+                                    }
                                 } else {
                                     n++;
                                 }
                             }
                         } else {
                             myDataSocket.sendMessage("ERR");
+                            messageSent = true;
                         }
                     }
-                } // end while !done
+                }// end while !done
+                if(!messageSent) {
+                    myDataSocket.sendMessage("ERR");
+                }
             } // end while forever
         } // end try
         catch (Exception ex) {
-            ex.printStackTrace();
         }
     } // end main
-
-    public static int countLinesNew(String filename) throws IOException {
-        InputStream is = new BufferedInputStream(new FileInputStream(filename));
-        try {
-            byte[] c = new byte[1024];
-
-            int readChars = is.read(c);
-            if (readChars == -1) {
-                // bail out if nothing to read
-                return 0;
-            }
-
-            // make it easy for the optimizer to tune this loop
-            int count = 0;
-            while (readChars == 1024) {
-                for (int i=0; i<1024;) {
-                    if (c[i++] == '\n') {
-                        ++count;
-                    }
-                }
-                readChars = is.read(c);
-            }
-
-            // count remaining characters
-            while (readChars != -1) {
-                System.out.println(readChars);
-                for (int i=0; i<readChars; ++i) {
-                    if (c[i] == '\n') {
-                        ++count;
-                    }
-                }
-                readChars = is.read(c);
-            }
-
-            return count == 0 ? 1 : count;
-        } finally {
-            is.close();
-        }
-    }
 } // end class
