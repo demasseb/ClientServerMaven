@@ -6,7 +6,6 @@ public class MyStreamSocket {
     private Socket socket;
 
     private DataInputStream input;
-
     private DataOutputStream output;
 
 

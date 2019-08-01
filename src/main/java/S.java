@@ -27,7 +27,7 @@ public class S {
                 // wait to accept a connection
                 System.out.println("Waiting for a connection.");
                 MyStreamSocket myDataSocket = new MyStreamSocket(myConnectionSocket.accept());
-                System.out.println("connection accepted");
+                System.out.println("Connection accepted");
                 boolean done = false;
                 boolean messageSent = false;
                 while( !done ) {
